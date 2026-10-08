@@ -133,14 +133,14 @@ function closeM(){$('#modal').style.display='none';if(dirty){dirty=false;render(
 function render(){
  $('#name').textContent=S.cfg.name;fsStat();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
- $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja}[tab]();mobileLabels();
+ $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja}[tab]();mobileLabels();applyQ();
 }
 $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S.cfg.name=n;save();render()}};
 
 /* ---------- Comprobantes ---------- */
 function vDocs(){
  const rows=[...S.docs].reverse().map(d=>`<tr><td onclick="printDoc('${d.id}')" style="cursor:pointer;color:var(--pr);text-decoration:underline">${num(d)}</td><td>${d.date}</td><td>${esc(cname(d.cid))}</td><td>${d.type==='P'?'Presupuesto'+(d.status==='Convertido'?' (pasado a venta)':''):'Venta · '+d.pm}</td><td class="r">${money(d.total)}</td><td class="a"><button onclick="printDoc('${d.id}')">Ver / imprimir</button>${d.type==='P'&&d.status!=='Convertido'?`<button onclick="convert('${d.id}')">Pasar a venta</button>`:''}<button class="x" onclick="delDoc('${d.id}')">Eliminar</button></td></tr>`).join('');
- return `<div class="bar"><button class="pr" onclick="docForm('P')">+ Presupuesto</button><button class="pr" onclick="docForm('V')">+ Venta</button></div><div class="wrap"><table><tr><th>Nº<th>Fecha<th>Cliente<th>Tipo<th class="r">Total<th></tr>${rows||'<tr><td colspan="6" class="mu">Todavía no hay comprobantes.</td></tr>'}</table></div>`;
+ return `${sbox('Buscar por número, cliente, fecha o tipo...')}<div class="bar"><button class="pr" onclick="docForm('P')">+ Presupuesto</button><button class="pr" onclick="docForm('V')">+ Venta</button></div><div class="wrap"><table><tr><th>Nº<th>Fecha<th>Cliente<th>Tipo<th class="r">Total<th></tr>${rows||'<tr><td colspan="6" class="mu">Todavía no hay comprobantes.</td></tr>'}</table></div>`;
 }
 function docForm(type,base){
  F={type,cid:base?base.cid:'',date:today(),pm:'Efectivo',note:base?base.note||'':'',disc:base?base.disc||0:0,sur:base?base.sur||0:0,src:base?base.id:'',items:base?base.items.map(i=>({pid:i.pid,qty:i.qty,price:i.price})):[{pid:'',qty:1,price:0}]};
@@ -188,7 +188,7 @@ function printDoc(id){
 function vProds(){
  const rows=S.prods.map(p=>`<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'')}</td><td>${esc(p.sup||'')}</td><td class="r ${p.stock<=p.min?'bad':''}">${p.stock}${p.stock<=p.min?' ⚠':''}</td><td class="r">${money(p.cost)}</td><td class="r">${money(p.price)}</td><td class="r">${p.pm?money(p.pm):'-'}</td><td class="a"><button onclick="prodForm('${p.id}')">Editar</button><button class="x" onclick="delProd('${p.id}')">Borrar</button></td></tr>`).join('');
  const val=S.prods.reduce((a,p)=>a+p.stock*p.cost,0);
- return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div><div class="bar"><button onclick="listForm()">Categorías y proveedores</button><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
+ return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div>${sbox('Buscar por nombre, código, categoría o proveedor...')}<div class="bar"><button onclick="listForm()">Categorías y proveedores</button><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
 }
 function prodForm(id){
  const p=S.prods.find(x=>x.id===id)||{code:'',name:'',stock:0,min:0,cost:0,price:0};
@@ -211,7 +211,7 @@ function adjPrices(){
 /* ---------- Clientes ---------- */
 function vCli(){
  const rows=S.clients.map(c=>{const b=bal(c.id);return `<tr><td>${esc(c.name)}</td><td>${esc(c.doc||'')}</td><td>${esc(c.phone)}</td><td>${esc(c.addr||'')}</td><td>${c.type||'Minorista'}</td><td>${esc(c.notes)}</td><td class="r ${b>0?'bad':''}">${money(b)}</td><td class="a"><button onclick="cliForm('${c.id}')">Editar</button><button class="x" onclick="delCli('${c.id}')">Borrar</button></td></tr>`}).join('');
- return `<div class="bar"><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>DNI / CUIT<th>Teléfono<th>Dirección<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="8" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
+ return `${sbox('Buscar por nombre, DNI/CUIT, teléfono o dirección...')}<div class="bar"><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>DNI / CUIT<th>Teléfono<th>Dirección<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="8" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
 }
 function cliForm(id){
  const c=S.clients.find(x=>x.id===id)||{name:'',phone:'',notes:'',addr:'',doc:''};
@@ -233,7 +233,7 @@ function vAcc(){
  if(!selC){
   const tot=S.clients.reduce((a,c)=>a+Math.max(bal(c.id),0),0);
   const rows=S.clients.map(c=>{const b=bal(c.id);return `<tr><td>${esc(c.name)}</td><td class="r ${b>0?'bad':'ok'}">${money(b)}</td><td class="a"><button onclick="selC='${c.id}';render()">Ver cuenta</button></td></tr>`}).join('');
-  return `<div class="cards"><div>Total a cobrar<b class="bad">${money(tot)}</b></div></div><div class="wrap"><table><tr><th>Cliente<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="3" class="mu">Cargá clientes para llevar su cuenta corriente.</td></tr>'}</table></div>`;
+  return `<div class="cards"><div>Total a cobrar<b class="bad">${money(tot)}</b></div></div>${sbox('Buscar cliente...')}<div class="wrap"><table><tr><th>Cliente<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="3" class="mu">Cargá clientes para llevar su cuenta corriente.</td></tr>'}</table></div>`;
  }
  const mv=[...S.docs.filter(d=>d.type==='V'&&d.cid===selC).map(d=>({date:d.date,t:'Venta '+num(d),debe:d.total,haber:0})),...S.pays.filter(p=>p.cid===selC).map(p=>({date:p.date,t:p.note||'Pago',debe:0,haber:p.amt}))].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
  let run=0;
@@ -280,6 +280,19 @@ function listForm(){
 function addList(k){const n=val('n_'+k).trim();if(n)pushOpt(k,n);listForm()}
 function delOpt(k,i){const key=LST[k];if(confirm('¿Quitar "'+S.cfg[key][i]+'" de la lista? Los productos que ya lo usan lo conservan.')){S.cfg[key].splice(i,1);save();listForm()}}
 function seedOpts(){S.prods.forEach(p=>{if(p.cat)pushOpt('cat',p.cat);if(p.sup)pushOpt('sup',p.sup)});listForm()}
+
+/* ---------- Buscador ---------- */
+const Q={};
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const sbox=ph=>`<div style="margin-bottom:10px"><input id="q" type="search" placeholder="${ph}" value="${esc(Q[tab]||'')}" oninput="filt(this.value)" style="width:100%"><p id="nores" class="mu" style="display:none;margin:8px 0 0">Sin resultados.</p></div>`;
+function filt(v){Q[tab]=v;applyQ()}
+function applyQ(){
+ const q=norm(Q[tab]||'').trim(),ws=q?q.split(/\s+/):[];let n=0,vis=0;
+ document.querySelectorAll('#main table').forEach(t=>[...t.rows].forEach(r=>{
+  if(r.querySelector('th')||r.querySelector('td[colspan]'))return;
+  n++;const tx=norm([...r.cells].filter(c=>!c.classList.contains('a')).map(c=>c.textContent).join(' ')),ok=ws.every(w=>tx.includes(w));
+  r.style.display=ok?'':'none';if(ok)vis++}));
+ const m=document.getElementById('nores');if(m)m.style.display=(ws.length&&n&&!vis)?'':'none'}
 
 /* ---------- Reportes ---------- */
 function vRep(){
