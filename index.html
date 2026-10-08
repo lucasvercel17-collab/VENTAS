@@ -41,7 +41,7 @@ label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* === CONFIGURACIÓN: pegá acá los datos de tu proyecto de Supabase (Project Settings > API) === */
-const SB_URL='https://fzbhhpswpiaegipfzzeh.supabase.co',SB_KEY='sb_publishable_BDzUSmgkMHveBQhQXsiQiA_PhFAbMxg';
+const SB_URL='https://fzbhhpswpiaegipfzzeh.supabase.co',sb_publishable_BDzUSmgkMHveBQhQXsiQiA_PhFAbMxg';
 /* ================================================================================== */
 const sb=(SB_URL.startsWith('https://')&&window.supabase)?window.supabase.createClient(SB_URL,SB_KEY):null;
 const KEY='ventas_v1';
@@ -158,7 +158,7 @@ function delDoc(id){
 }
 function printDoc(id){
  const d=S.docs.find(x=>x.id===id);
- modal(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">${S.cfg.logo?`<img src="${S.cfg.logo}" style="height:64px;max-width:240px;object-fit:contain">`:`<b style="font-size:19px">${esc(S.cfg.name)}</b>`}<div class="r"><b>${esc(S.cfg.name)}</b><br>${esc(S.cfg.addr||'')} ${esc(S.cfg.tel||'')}<br>${S.cfg.cuit?'CUIT: '+esc(S.cfg.cuit):''}</div></div><p><b>${d.type==='P'?'PRESUPUESTO':'COMPROBANTE DE VENTA'} ${num(d)}</b> · ${d.date}<br><small class="mu">Documento interno. No válido como factura.</small></p><p><b>Cliente:</b> ${esc(cname(d.cid))}</p><table><tr><th>Producto<th class="r">Cant.<th class="r">Precio<th class="r">Subtotal</tr>${d.items.map(i=>`<tr><td>${esc(i.name)}<td class="r">${i.qty}<td class="r">${money(i.price)}<td class="r">${money(i.qty*i.price)}`).join('')}</table>${d.disc||d.sur?`<p class="r">Subtotal: ${money(d.sub)}${d.disc?` · Descuento ${d.disc}%`:''}${d.sur?` · Recargo ${d.sur}%`:''}</p>`:''}<h3 class="r" style="margin-top:12px">Total: ${money(d.total)}</h3>${d.type==='V'?`<p>Forma de pago: ${d.pm}</p>`:`<p><small>${esc(S.cfg.quoteTxt??'Presupuesto sujeto a disponibilidad y variación de precios.')}</small></p>`}${d.note?`<p><b>Notas:</b> ${esc(d.note).replace(/\n/g,'<br>')}</p>`:''}<p class="mu">${esc(S.cfg.foot||'')}</p><div class="bar noprint"><button onclick="closeM()">Cerrar</button><button class="x" onclick="closeM();delDoc('${d.id}')">Eliminar</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>`);
+ modal(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">${S.cfg.logo?`<img src="${S.cfg.logo}" style="height:64px;max-width:240px;object-fit:contain">`:`<b style="font-size:19px">${esc(S.cfg.name)}</b>`}<div class="r"><b>${esc(S.cfg.name)}</b><br>${esc(S.cfg.addr||'')} ${esc(S.cfg.tel||'')}<br>${S.cfg.cuit?'CUIT: '+esc(S.cfg.cuit):''}</div></div><p><b>${d.type==='P'?'PRESUPUESTO':'COMPROBANTE DE VENTA'} ${num(d)}</b> · ${d.date}<br><small class="mu">Documento interno. No válido como factura.</small></p><p><b>Cliente:</b> ${esc(cname(d.cid))}${(c=>c?(c.doc?' · DNI/CUIT: '+esc(c.doc):'')+(c.addr?'<br>'+esc(c.addr):''):'')(S.clients.find(x=>x.id===d.cid))}</p><table><tr><th>Producto<th class="r">Cant.<th class="r">Precio<th class="r">Subtotal</tr>${d.items.map(i=>`<tr><td>${esc(i.name)}<td class="r">${i.qty}<td class="r">${money(i.price)}<td class="r">${money(i.qty*i.price)}`).join('')}</table>${d.disc||d.sur?`<p class="r">Subtotal: ${money(d.sub)}${d.disc?` · Descuento ${d.disc}%`:''}${d.sur?` · Recargo ${d.sur}%`:''}</p>`:''}<h3 class="r" style="margin-top:12px">Total: ${money(d.total)}</h3>${d.type==='V'?`<p>Forma de pago: ${d.pm}</p>`:`<p><small>${esc(S.cfg.quoteTxt??'Presupuesto sujeto a disponibilidad y variación de precios.')}</small></p>`}${d.note?`<p><b>Notas:</b> ${esc(d.note).replace(/\n/g,'<br>')}</p>`:''}<p class="mu">${esc(S.cfg.foot||'')}</p><div class="bar noprint"><button onclick="closeM()">Cerrar</button><button class="x" onclick="closeM();delDoc('${d.id}')">Eliminar</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>`);
 }
 
 /* ---------- Productos ---------- */
@@ -187,16 +187,16 @@ function adjPrices(){
 
 /* ---------- Clientes ---------- */
 function vCli(){
- const rows=S.clients.map(c=>{const b=bal(c.id);return `<tr><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${c.type||'Minorista'}</td><td>${esc(c.notes)}</td><td class="r ${b>0?'bad':''}">${money(b)}</td><td class="a"><button onclick="cliForm('${c.id}')">Editar</button><button class="x" onclick="delCli('${c.id}')">Borrar</button></td></tr>`}).join('');
- return `<div class="bar"><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>Teléfono<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="6" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
+ const rows=S.clients.map(c=>{const b=bal(c.id);return `<tr><td>${esc(c.name)}</td><td>${esc(c.doc||'')}</td><td>${esc(c.phone)}</td><td>${esc(c.addr||'')}</td><td>${c.type||'Minorista'}</td><td>${esc(c.notes)}</td><td class="r ${b>0?'bad':''}">${money(b)}</td><td class="a"><button onclick="cliForm('${c.id}')">Editar</button><button class="x" onclick="delCli('${c.id}')">Borrar</button></td></tr>`}).join('');
+ return `<div class="bar"><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>DNI / CUIT<th>Teléfono<th>Dirección<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="8" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
 }
 function cliForm(id){
- const c=S.clients.find(x=>x.id===id)||{name:'',phone:'',notes:''};
- modal(`<h3>${id?'Editar':'Nuevo'} cliente</h3><div class="g"><label>Nombre<input id="f_name" value="${esc(c.name)}"></label><label>Teléfono<input id="f_phone" value="${esc(c.phone)}"></label><label>Notas<input id="f_notes" value="${esc(c.notes)}"></label><label>Tipo de precio<select id="f_type"><option ${c.type!=='Mayorista'?'selected':''}>Minorista</option><option ${c.type==='Mayorista'?'selected':''}>Mayorista</option></select></label></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveCli('${id||''}')">Guardar</button></div>`);
+ const c=S.clients.find(x=>x.id===id)||{name:'',phone:'',notes:'',addr:'',doc:''};
+ modal(`<h3>${id?'Editar':'Nuevo'} cliente</h3><div class="g"><label>Nombre<input id="f_name" value="${esc(c.name)}"></label><label>DNI / CUIT<input id="f_doc" value="${esc(c.doc||'')}"></label><label>Teléfono<input id="f_phone" value="${esc(c.phone)}"></label><label>Dirección<input id="f_addr" value="${esc(c.addr||'')}"></label><label>Notas<input id="f_notes" value="${esc(c.notes)}"></label><label>Tipo de precio<select id="f_type"><option ${c.type!=='Mayorista'?'selected':''}>Minorista</option><option ${c.type==='Mayorista'?'selected':''}>Mayorista</option></select></label></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveCli('${id||''}')">Guardar</button></div>`);
 }
 function saveCli(id){
  if(!val('f_name').trim())return alert('Poné un nombre.');
- const o={name:val('f_name').trim(),phone:val('f_phone'),notes:val('f_notes'),type:val('f_type')};
+ const o={name:val('f_name').trim(),phone:val('f_phone'),notes:val('f_notes'),type:val('f_type'),addr:val('f_addr'),doc:val('f_doc')};
  if(id)Object.assign(S.clients.find(c=>c.id===id),o);else S.clients.push({id:uid(),...o});
  save();closeM();render();
 }
