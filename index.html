@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sistema de ventas</title><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f5fbf">
+<title>Sistema de ventas</title><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f5fbf"><meta name="apple-mobile-web-app-title" content="V-Tech"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{--bg:#f4f6f9;--card:#fff;--tx:#1b2430;--mu:#6b7684;--bd:#dde1e7;--pr:#1f5fbf;--ok:#1a7f4b;--bad:#c0392b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161c;--card:#1b2129;--tx:#e8ecf1;--mu:#9aa5b1;--bd:#2c343e;--pr:#5b9bff;--ok:#4cc38a;--bad:#ff7b6b}}
@@ -31,11 +31,29 @@ label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 .cards{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .cards div{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px 14px}
 .cards b{display:block;font-size:18px}
+@media screen and (max-width:700px){
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:8px 10px}
+#name{font-size:15px}header>button,#fs{font-size:12px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;overflow-x:auto;gap:6px}
+nav button{flex:0 0 auto;padding:10px 12px}
+main{padding:10px 10px 96px}
+#main .wrap{border:0;background:none;overflow:visible}
+#main table,#main tbody{display:block}
+#main tr.hd{display:none}
+#main tr{display:block;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+#main td{display:flex;justify-content:space-between;gap:10px;border:0;padding:3px 0;white-space:normal;text-align:right}
+#main td::before{content:attr(data-l);color:var(--mu);font-size:12px;text-align:left;flex:0 0 auto}
+#main td.a{flex-wrap:wrap;justify-content:flex-start;padding-top:8px}#main td.a::before,#main td[colspan]::before{display:none}
+#main td[colspan]{display:block;text-align:center}
+.cards div{flex:1 1 45%}.bar{justify-content:stretch}.bar>button{flex:1}
+input,select,textarea{font-size:16px}button{min-height:38px}
+.modal{padding:0;align-items:stretch}.box{border-radius:0;min-height:100%;max-width:none}
+}
 @media print{body>*:not(#modal){display:none!important}.noprint{display:none!important}#modal{position:static;background:none;display:block!important;padding:0}.box{max-width:none;padding:0}}
 </style></head><body>
 <header><span id="name" title="Tocá para cambiar el nombre"></span>
 <nav><button data-t="docs" onclick="go('docs')">Comprobantes</button><button data-t="prods" onclick="go('prods')">Stock y precios</button><button data-t="cli" onclick="go('cli')">Clientes</button><button data-t="acc" onclick="go('acc')">Cuentas corrientes</button><button data-t="caja" onclick="go('caja')">Caja diaria</button><button data-t="rep" onclick="go('rep')">Reportes</button></nav>
-<span id="fs" class="mu" style="font-size:12px"></span><button onclick="cfgForm()">Mi negocio</button><button onclick="backup()">Respaldo</button><button onclick="logout()">Salir</button></header>
+<span id="fs" class="mu" style="font-size:12px"></span><button onclick="cfgForm()">Mi negocio</button><button id="inst" style="display:none" onclick="installApp()">Instalar app</button><button onclick="backup()">Respaldo</button><button onclick="logout()">Salir</button></header>
 <div id="login" class="modal" style="display:flex"><div class="box" style="max-width:360px;margin-top:10vh"><h3>Ingresar al sistema</h3><div class="g" style="grid-template-columns:1fr"><label>Correo<input id="l_mail" type="email" autocomplete="username"></label><label>Contraseña<input id="l_pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></label></div><div class="bar"><button class="pr" onclick="login()">Ingresar</button></div><p id="l_err" class="bad"></p></div></div>
 <main id="main"></main><div id="modal" class="modal"></div>
 <div id="errbar" style="display:none;position:fixed;top:0;left:0;right:0;background:#c0392b;color:#fff;padding:8px 12px;z-index:99;font:13px system-ui,Arial"></div>
@@ -115,7 +133,7 @@ function closeM(){$('#modal').style.display='none';if(dirty){dirty=false;render(
 function render(){
  $('#name').textContent=S.cfg.name;fsStat();
  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
- $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja}[tab]();
+ $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja}[tab]();mobileLabels();
 }
 $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S.cfg.name=n;save();render()}};
 
@@ -310,5 +328,11 @@ async function boot(){
  const{data}=await sb.auth.getSession();
  if(data.session)start(data.session);
  sb.auth.onAuthStateChange((e)=>{if(e==='SIGNED_OUT')$('#login').style.display='flex'})}
+function mobileLabels(){document.querySelectorAll('#main table').forEach(t=>{const r0=t.rows[0];if(!r0||!r0.querySelector('th'))return;const hs=[...r0.cells].map(c=>c.textContent);r0.classList.add('hd');[...t.rows].slice(1).forEach(r=>[...r.cells].forEach((c,i)=>c.dataset.l=hs[i]||''))})}
+let IP=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();IP=e;if(window.matchMedia&&matchMedia('(max-width:700px)').matches)$('#inst').style.display=''});
+window.addEventListener('appinstalled',()=>{$('#inst').style.display='none';IP=null});
+function installApp(){if(IP){IP.prompt();IP=null;$('#inst').style.display='none'}}
 boot();
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script></body></html>
