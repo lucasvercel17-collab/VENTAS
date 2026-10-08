@@ -41,7 +41,7 @@ label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* === CONFIGURACIÓN: pegá acá los datos de tu proyecto de Supabase (Project Settings > API) === */
-const SB_URL='https://fzbhhpswpiaegipfzzeh.supabase.co',SB_KEY='sb_publishable_BDzUSmgkMHveBQhQXsiQiA_PhFAbMxg';
+const SB_URL='PEGAR_AQUI_LA_URL_DEL_PROYECTO',SB_KEY='PEGAR_AQUI_LA_ANON_KEY';
 /* ================================================================================== */
 const sb=(SB_URL.startsWith('https://')&&window.supabase)?window.supabase.createClient(SB_URL,SB_KEY):null;
 const KEY='ventas_v1';
@@ -116,7 +116,7 @@ $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S
 
 /* ---------- Comprobantes ---------- */
 function vDocs(){
- const rows=[...S.docs].reverse().map(d=>`<tr><td>${num(d)}</td><td>${d.date}</td><td>${esc(cname(d.cid))}</td><td>${d.type==='P'?'Presupuesto'+(d.status==='Convertido'?' (pasado a venta)':''):'Venta · '+d.pm}</td><td class="r">${money(d.total)}</td><td class="a"><button onclick="printDoc('${d.id}')">Ver / imprimir</button>${d.type==='P'&&d.status!=='Convertido'?`<button onclick="convert('${d.id}')">Pasar a venta</button>`:''}<button class="x" onclick="delDoc('${d.id}')">Eliminar</button></td></tr>`).join('');
+ const rows=[...S.docs].reverse().map(d=>`<tr><td onclick="printDoc('${d.id}')" style="cursor:pointer;color:var(--pr);text-decoration:underline">${num(d)}</td><td>${d.date}</td><td>${esc(cname(d.cid))}</td><td>${d.type==='P'?'Presupuesto'+(d.status==='Convertido'?' (pasado a venta)':''):'Venta · '+d.pm}</td><td class="r">${money(d.total)}</td><td class="a"><button onclick="printDoc('${d.id}')">Ver / imprimir</button>${d.type==='P'&&d.status!=='Convertido'?`<button onclick="convert('${d.id}')">Pasar a venta</button>`:''}<button class="x" onclick="delDoc('${d.id}')">Eliminar</button></td></tr>`).join('');
  return `<div class="bar"><button class="pr" onclick="docForm('P')">+ Presupuesto</button><button class="pr" onclick="docForm('V')">+ Venta</button></div><div class="wrap"><table><tr><th>Nº<th>Fecha<th>Cliente<th>Tipo<th class="r">Total<th></tr>${rows||'<tr><td colspan="6" class="mu">Todavía no hay comprobantes.</td></tr>'}</table></div>`;
 }
 function docForm(type,base){
@@ -152,24 +152,24 @@ async function saveDoc(){
 function convert(id){const d=S.docs.find(x=>x.id===id);docForm('V',d)}
 function delDoc(id){
  const d=S.docs.find(x=>x.id===id);
- if(!confirm('¿Eliminar '+num(d)+'?'+(d.type==='V'?' Se devuelve el stock y se anulan sus pagos al contado.':'')))return;
+ if(!confirm('¿Eliminar '+num(d)+'?'+(d.type==='V'?' Se devuelve el stock y se anulan los cobros registrados con esa venta.':'')))return;
  if(d.type==='V'){d.items.forEach(i=>{const p=S.prods.find(p=>p.id===i.pid);if(p)p.stock+=i.qty});S.pays=S.pays.filter(p=>p.docId!==id)}
  S.docs=S.docs.filter(x=>x.id!==id);save();render();
 }
 function printDoc(id){
  const d=S.docs.find(x=>x.id===id);
- modal(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">${S.cfg.logo?`<img src="${S.cfg.logo}" style="height:64px;max-width:240px;object-fit:contain">`:`<b style="font-size:19px">${esc(S.cfg.name)}</b>`}<div class="r"><b>${esc(S.cfg.name)}</b><br>${esc(S.cfg.addr||'')} ${esc(S.cfg.tel||'')}<br>${S.cfg.cuit?'CUIT: '+esc(S.cfg.cuit):''}</div></div><p><b>${d.type==='P'?'PRESUPUESTO':'COMPROBANTE DE VENTA'} ${num(d)}</b> · ${d.date}<br><small class="mu">Documento interno. No válido como factura.</small></p><p><b>Cliente:</b> ${esc(cname(d.cid))}</p><table><tr><th>Producto<th class="r">Cant.<th class="r">Precio<th class="r">Subtotal</tr>${d.items.map(i=>`<tr><td>${esc(i.name)}<td class="r">${i.qty}<td class="r">${money(i.price)}<td class="r">${money(i.qty*i.price)}`).join('')}</table>${d.disc||d.sur?`<p class="r">Subtotal: ${money(d.sub)}${d.disc?` · Descuento ${d.disc}%`:''}${d.sur?` · Recargo ${d.sur}%`:''}</p>`:''}<h3 class="r" style="margin-top:12px">Total: ${money(d.total)}</h3>${d.type==='V'?`<p>Forma de pago: ${d.pm}</p>`:`<p><small>${esc(S.cfg.quoteTxt??'Presupuesto sujeto a disponibilidad y variación de precios.')}</small></p>`}${d.note?`<p><b>Notas:</b> ${esc(d.note).replace(/\n/g,'<br>')}</p>`:''}<p class="mu">${esc(S.cfg.foot||'')}</p><div class="bar noprint"><button onclick="closeM()">Cerrar</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>`);
+ modal(`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">${S.cfg.logo?`<img src="${S.cfg.logo}" style="height:64px;max-width:240px;object-fit:contain">`:`<b style="font-size:19px">${esc(S.cfg.name)}</b>`}<div class="r"><b>${esc(S.cfg.name)}</b><br>${esc(S.cfg.addr||'')} ${esc(S.cfg.tel||'')}<br>${S.cfg.cuit?'CUIT: '+esc(S.cfg.cuit):''}</div></div><p><b>${d.type==='P'?'PRESUPUESTO':'COMPROBANTE DE VENTA'} ${num(d)}</b> · ${d.date}<br><small class="mu">Documento interno. No válido como factura.</small></p><p><b>Cliente:</b> ${esc(cname(d.cid))}</p><table><tr><th>Producto<th class="r">Cant.<th class="r">Precio<th class="r">Subtotal</tr>${d.items.map(i=>`<tr><td>${esc(i.name)}<td class="r">${i.qty}<td class="r">${money(i.price)}<td class="r">${money(i.qty*i.price)}`).join('')}</table>${d.disc||d.sur?`<p class="r">Subtotal: ${money(d.sub)}${d.disc?` · Descuento ${d.disc}%`:''}${d.sur?` · Recargo ${d.sur}%`:''}</p>`:''}<h3 class="r" style="margin-top:12px">Total: ${money(d.total)}</h3>${d.type==='V'?`<p>Forma de pago: ${d.pm}</p>`:`<p><small>${esc(S.cfg.quoteTxt??'Presupuesto sujeto a disponibilidad y variación de precios.')}</small></p>`}${d.note?`<p><b>Notas:</b> ${esc(d.note).replace(/\n/g,'<br>')}</p>`:''}<p class="mu">${esc(S.cfg.foot||'')}</p><div class="bar noprint"><button onclick="closeM()">Cerrar</button><button class="x" onclick="closeM();delDoc('${d.id}')">Eliminar</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>`);
 }
 
 /* ---------- Productos ---------- */
 function vProds(){
  const rows=S.prods.map(p=>`<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'')}</td><td>${esc(p.sup||'')}</td><td class="r ${p.stock<=p.min?'bad':''}">${p.stock}${p.stock<=p.min?' ⚠':''}</td><td class="r">${money(p.cost)}</td><td class="r">${money(p.price)}</td><td class="r">${p.pm?money(p.pm):'-'}</td><td class="a"><button onclick="prodForm('${p.id}')">Editar</button><button class="x" onclick="delProd('${p.id}')">Borrar</button></td></tr>`).join('');
  const val=S.prods.reduce((a,p)=>a+p.stock*p.cost,0);
- return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div><div class="bar"><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
+ return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div><div class="bar"><button onclick="listForm()">Categorías y proveedores</button><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
 }
 function prodForm(id){
  const p=S.prods.find(x=>x.id===id)||{code:'',name:'',stock:0,min:0,cost:0,price:0};
- modal(`<h3>${id?'Editar':'Nuevo'} producto</h3><div class="g"><label>Código<input id="f_code" value="${esc(p.code)}"></label><label>Nombre<input id="f_name" value="${esc(p.name)}"></label><label>Stock<input id="f_stock" type="number" value="${p.stock}"></label><label>Stock mínimo (alerta)<input id="f_min" type="number" value="${p.min}"></label><label>Costo<input id="f_cost" type="number" step="any" value="${p.cost}" oninput="calcP();calcPM()"></label><label>Margen % sobre costo<input id="f_mg" type="number" step="any" value="${p.mg||(p.cost>0&&p.price?rnd((p.price/p.cost-1)*100):'')}" oninput="calcP()"></label><label>Precio de venta<input id="f_price" type="number" step="any" value="${p.price}" oninput="calcM()"></label><label>Margen mayorista %<input id="f_mgm" type="number" step="any" value="${p.mgm||(p.cost>0&&p.pm?rnd((p.pm/p.cost-1)*100):'')}" oninput="calcPM()"></label><label>Precio mayorista (opcional)<input id="f_pm" type="number" step="any" value="${p.pm||0}" oninput="calcMM()"></label><label>Categoría<input id="f_cat" value="${esc(p.cat||'')}"></label><label>Proveedor<input id="f_sup" value="${esc(p.sup||'')}"></label></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveProd('${id||''}')">Guardar</button></div>`);
+ modal(`<h3>${id?'Editar':'Nuevo'} producto</h3><div class="g"><label>Código<input id="f_code" value="${esc(p.code)}"></label><label>Nombre<input id="f_name" value="${esc(p.name)}"></label><label>Stock<input id="f_stock" type="number" value="${p.stock}"></label><label>Stock mínimo (alerta)<input id="f_min" type="number" value="${p.min}"></label><label>Costo<input id="f_cost" type="number" step="any" value="${p.cost}" oninput="calcP();calcPM()"></label><label>Margen % sobre costo<input id="f_mg" type="number" step="any" value="${p.mg||(p.cost>0&&p.price?rnd((p.price/p.cost-1)*100):'')}" oninput="calcP()"></label><label>Precio de venta<input id="f_price" type="number" step="any" value="${p.price}" oninput="calcM()"></label><label>Margen mayorista %<input id="f_mgm" type="number" step="any" value="${p.mgm||(p.cost>0&&p.pm?rnd((p.pm/p.cost-1)*100):'')}" oninput="calcPM()"></label><label>Precio mayorista (opcional)<input id="f_pm" type="number" step="any" value="${p.pm||0}" oninput="calcMM()"></label><label>Categoría${selList('cat',p.cat)}</label><label>Proveedor${selList('sup',p.sup)}</label></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveProd('${id||''}')">Guardar</button></div>`);
 }
 function saveProd(id){
  if(!val('f_name').trim())return alert('Poné un nombre.');
@@ -240,6 +240,24 @@ function delMv(id){if(confirm('¿Quitar el movimiento?')){S.cash=S.cash.filter(m
 function setOpen(){const v=prompt('Efectivo de apertura de caja ($):',S.open[CD]||0);if(v===null)return;const n=parseFloat(v.replace(',','.'));if(isFinite(n)){S.open[CD]=n;save();render()}}
 function printCaja(){modal($('#cajaP').innerHTML+'<div class="bar noprint"><button onclick="closeM()">Cerrar</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>')}
 
+/* ---------- Listas de categorías y proveedores ---------- */
+const LST={cat:'cats',sup:'sups'};
+function selList(k,cur){
+ const l=S.cfg[LST[k]]||[],all=cur&&!l.includes(cur)?[...l,cur]:l;
+ return `<div style="display:flex;gap:6px"><select id="f_${k}" style="flex:1"><option value="">— Sin ${k==='cat'?'categoría':'proveedor'} —</option>${all.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('')}</select><button type="button" onclick="addOpt('${k}')" title="Agregar nuevo">+</button></div>`}
+function pushOpt(k,n){const key=LST[k];S.cfg[key]=S.cfg[key]||[];const ex=S.cfg[key].find(x=>x.toLowerCase()===n.toLowerCase());if(ex)return ex;S.cfg[key].push(n);S.cfg[key].sort((a,b)=>a.localeCompare(b));save();return n}
+function addOpt(k){
+ const raw=(prompt('Nombre de '+(k==='cat'?'la nueva categoría':'el nuevo proveedor')+':')||'').trim();if(!raw)return;
+ const n=pushOpt(k,raw),s=document.getElementById('f_'+k),ex=[...s.options].find(o=>o.value===n);
+ if(ex)s.value=n;else{s.add(new Option(n,n));s.value=n}}
+function listForm(){
+ const blk=(k,t)=>`<h4 style="margin:12px 0 6px">${t}</h4><div>${(S.cfg[LST[k]]||[]).map((x,i)=>`<span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--bd);border-radius:14px;padding:2px 4px 2px 10px;margin:0 6px 6px 0">${esc(x)}<button class="x" style="border:0;padding:0 6px" onclick="delOpt('${k}',${i})">×</button></span>`).join('')||'<span class="mu">Todavía no cargaste ninguno.</span>'}</div><div class="bar" style="justify-content:flex-start"><input id="n_${k}" placeholder="Nuevo..." onkeydown="if(event.key==='Enter')addList('${k}')"><button onclick="addList('${k}')">Agregar</button></div>`;
+ modal('<h3>Categorías y proveedores</h3>'+blk('cat','Categorías')+blk('sup','Proveedores')+'<div class="bar" style="margin-top:8px"><button onclick="seedOpts()">Traer los de mis productos</button><button class="pr" onclick="closeM()">Listo</button></div>');
+}
+function addList(k){const n=val('n_'+k).trim();if(n)pushOpt(k,n);listForm()}
+function delOpt(k,i){const key=LST[k];if(confirm('¿Quitar "'+S.cfg[key][i]+'" de la lista? Los productos que ya lo usan lo conservan.')){S.cfg[key].splice(i,1);save();listForm()}}
+function seedOpts(){S.prods.forEach(p=>{if(p.cat)pushOpt('cat',p.cat);if(p.sup)pushOpt('sup',p.sup)});listForm()}
+
 /* ---------- Reportes ---------- */
 function vRep(){
  const ds=S.docs.filter(d=>d.type==='V'&&d.date>=R.from&&d.date<=R.to),tot=ds.reduce((a,d)=>a+d.total,0),cost=ds.reduce((a,d)=>a+d.items.reduce((b,i)=>b+i.qty*(i.cost||0),0),0),P={},C={},M={};
@@ -274,7 +292,7 @@ function load(t){try{const o=JSON.parse(t);if(!o.prods||!o.clients||!o.docs||!o.
 async function login(){
  $('#l_err').textContent='';
  const r=await sb.auth.signInWithPassword({email:val('l_mail').trim(),password:val('l_pw')});
- if(r.error)return $('#l_err').textContent='Correo o contraseña incorrectos.';
+ if(r.error)return $('#l_err').textContent='No se pudo ingresar: '+r.error.message;
  start(r.data.session)}
 async function logout(){await sb.auth.signOut();location.reload()}
 async function start(s){
