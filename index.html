@@ -32,6 +32,8 @@ label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 .g input,.g select,.g textarea{width:100%;box-sizing:border-box}
 .g input:not([type=checkbox]):not([type=file]),.g select{height:38px}
 textarea{box-sizing:border-box}
+.wrap th[data-arrow]::after{content:attr(data-arrow)}
+.wrap th{user-select:none}
 .g textarea{resize:vertical;min-height:76px}
 .g button{height:38px;padding:0 12px}
 .sec{margin:16px 0 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);border-bottom:1px solid var(--bd);padding-bottom:4px}
@@ -144,7 +146,8 @@ const nowTs=()=>new Date().toISOString();
 const cmp=(a,b)=>String(a??'').localeCompare(String(b??''),'es',{numeric:true,sensitivity:'base'});
 const cs=(x,y)=>x<y?-1:x>y?1:0;
 const sortedClients=()=>[...S.clients].sort((a,b)=>cmp(a.name,b.name)||cmp(a.code,b.code));
-const sortedProds=()=>[...S.prods].sort((a,b)=>cmp(a.name,b.name)||cmp(a.code,b.code));
+const sortedProds=()=>[...S.prods].sort((a,b)=>(!a.code)-(!b.code)||cmp(a.code,b.code)||cmp(a.name,b.name));
+const sortedProdsByName=()=>[...S.prods].sort((a,b)=>cmp(a.name,b.name)||cmp(a.code,b.code));
 const docDesc=(a,b)=>cs(b.date||'',a.date||'')||cs(b.ts||'',a.ts||'')||(b.num||0)-(a.num||0);
 const CA='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function newCode(){const used=new Set(S.clients.map(c=>c.code));let c;do{c='C-';for(let i=0;i<6;i++)c+=CA[Math.floor(Math.random()*CA.length)]}while(used.has(c));return c}
@@ -184,7 +187,7 @@ function closeM(){$('#modal').style.display='none';if(dirty){dirty=false;render(
 function render(){
  $('#name').textContent=S.cfg.name;fsStat();
  document.querySelectorAll('nav button').forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);if(on)$('#mnu').textContent='☰ '+b.textContent});
- $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja,ot:vOt}[tab]();mobileLabels();applyQ();fitWraps();
+ $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja,ot:vOt}[tab]();mobileLabels();applySort();applyQ();fitWraps();
 }
 $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S.cfg.name=n;save();render()}};
 
@@ -198,7 +201,7 @@ function docForm(type,base){
  drawForm();
 }
 function drawForm(){
- const rows=F.items.map((it,i)=>`<tr><td><select onchange="itSel(${i},this.value)"><option value="">— Producto —</option>${sortedProds().map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)} (stock ${p.stock})</option>`).join('')}</select></td><td><input type="number" min="1" value="${it.qty}" style="width:64px" onchange="itSet(${i},'qty',this.value)"></td><td><input type="number" min="0" step="any" value="${it.price}" style="width:100px" onchange="itSet(${i},'price',this.value)"></td><td class="r">${money(it.qty*it.price)}</td><td><button class="x" onclick="itDel(${i})">×</button></td></tr>`).join('');
+ const rows=F.items.map((it,i)=>`<tr><td><select onchange="itSel(${i},this.value)"><option value="">— Producto —</option>${sortedProdsByName().map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)} (stock ${p.stock})</option>`).join('')}</select></td><td><input type="number" min="1" value="${it.qty}" style="width:64px" onchange="itSet(${i},'qty',this.value)"></td><td><input type="number" min="0" step="any" value="${it.price}" style="width:100px" onchange="itSet(${i},'price',this.value)"></td><td class="r">${money(it.qty*it.price)}</td><td><button class="x" onclick="itDel(${i})">×</button></td></tr>`).join('');
  const sub=F.items.reduce((a,i)=>a+i.qty*i.price,0),T=ivaCalc(sub,F.disc,F.sur,F.iva),tot=T.total;
  modal(`<h3>${F.type==='P'?'Nuevo presupuesto':'Nueva venta'}</h3><div class="g c3"><label>Cliente<select onchange="F.cid=this.value;F.items.forEach(i=>{const p=S.prods.find(p=>p.id===i.pid);if(p)i.price=price(p,F.cid)});drawForm()"><option value="">Consumidor final</option>${sortedClients().map(c=>`<option value="${c.id}" ${c.id===F.cid?'selected':''}>${esc(c.name)} · ${esc(c.code||'')}</option>`).join('')}</select></label><label>Fecha<input type="date" value="${F.date}" onchange="F.date=this.value"></label>${F.type==='V'?`<label>Forma de pago<select id="d_pm" onchange="F.pm=this.value">${PMS.map(x=>`<option ${F.pm===x?'selected':''}>${x}</option>`).join('')}</select></label>`:''}<label>Descuento %<input type="number" min="0" step="any" value="${F.disc}" onchange="F.disc=+this.value||0;drawForm()"></label><label>Recargo %<input type="number" min="0" step="any" value="${F.sur}" onchange="F.sur=+this.value||0;drawForm()"></label><label>IVA<select id="d_iva" onchange="F.iva=this.value;drawForm()">${IVAO.map(([v,t])=>`<option value="${v}" ${F.iva===v?'selected':''}>${t}</option>`).join('')}</select></label></div><div class="wrap"><table class="items"><tr><th>Producto<th>Cant.<th>Precio<th class="r">Subtotal<th></tr>${rows}</table></div><div class="bar" style="margin-top:10px;justify-content:space-between"><button onclick="F.items.push({pid:'',qty:1,price:0});drawForm()">+ Agregar línea</button><div class="r">${F.iva?`<small class="mu">Neto ${money(T.base)} · IVA ${money(T.iva)}</small><br>`:''}<b style="font-size:18px">Total: ${money(tot)}</b></div></div><label style="margin-top:10px">Notas / aclaraciones para el cliente (salen en el comprobante)<textarea rows="3" style="width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px" oninput="F.note=this.value">${esc(F.note)}</textarea></label><div class="bar" style="margin-top:10px"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveDoc()">Guardar</button></div>`,'wide');
 }
@@ -357,6 +360,21 @@ function seedOpts(){S.prods.forEach(p=>{if(p.cat)pushOpt('cat',p.cat);if(p.sup)p
 /* ---------- Tablas: la barra de desplazamiento queda siempre a la vista ---------- */
 function fitWraps(){const d=window.matchMedia&&matchMedia('(min-width:701px)').matches;document.querySelectorAll('#main>.wrap').forEach(w=>{w.style.maxHeight=d?Math.max(160,innerHeight-(w.getBoundingClientRect().top+window.scrollY)-24)+'px':''})}
 window.addEventListener('resize',fitWraps);
+
+/* ---------- Ordenar tocando el título de una columna ---------- */
+const SORT={};
+function sortCol(i){const s=SORT[tab];SORT[tab]=s&&s.i===i?{i,d:-s.d}:{i,d:1};applySort()}
+function applySort(){
+ const s=SORT[tab];
+ document.querySelectorAll('#main table').forEach(t=>{
+  const tb=t.tBodies[0],hr=t.rows[0];if(!tb||!hr||!hr.querySelector('th'))return;
+  [...hr.cells].forEach((c,j)=>{if(!c.textContent.trim())return;c.style.cursor='pointer';c.title='Tocá para ordenar';c.onclick=()=>sortCol(j);c.dataset.arrow=s&&s.i===j?(s.d>0?' ▲':' ▼'):''});
+  if(!s)return;
+  const rows=[...tb.rows].slice(1).filter(r=>!r.querySelector('td[colspan]'));if(rows.length<2)return;
+  const tx=r=>(r.cells[s.i]?r.cells[s.i].textContent:'').trim(),cl=x=>x.split('→').pop().replace(/US\$|\$|⚠|%|\s/g,'');
+  const numeric=rows.every(r=>{const x=cl(tx(r));return !x||(/^-?\d[\d.,]*$/.test(x)&&!/^\d{4}-\d\d-\d\d$/.test(x))});
+  rows.sort((a,b)=>{const x=tx(a),y=tx(b);if(!x!==!y)return !x?1:-1;return s.d*(numeric?(parseNum(cl(x))||0)-(parseNum(cl(y))||0):cmp(x,y))});
+  tb.append(...rows)})}
 
 /* ---------- Buscador ---------- */
 const Q={};
