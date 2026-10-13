@@ -15,9 +15,10 @@ nav{display:flex;gap:4px;flex-wrap:wrap}
 button{font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;cursor:pointer}
 button.on,button.pr{background:var(--pr);border-color:var(--pr);color:#fff}
 button.x{color:var(--bad)}
-main{padding:14px;max-width:1000px;margin:0 auto}
+main{padding:14px;max-width:1500px;margin:0 auto}
 .bar{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap;justify-content:flex-end}
-.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--bd);border-radius:8px}
+.wrap th{position:sticky;top:0;z-index:1;background:var(--card)}
+.wrap{overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:8px}
 table{border-collapse:collapse;width:100%}
 th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
 th{color:var(--mu);font-size:12px;text-transform:uppercase}
@@ -36,7 +37,8 @@ textarea{box-sizing:border-box}
 .sec{margin:16px 0 8px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);border-bottom:1px solid var(--bd);padding-bottom:4px}
 .sec:first-of-type{margin-top:4px}
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);align-items:flex-start;justify-content:center;padding:20px 10px;overflow:auto;z-index:9}
-.box{background:var(--card);border-radius:10px;padding:16px;width:100%;max-width:720px}
+.box{background:var(--card);border-radius:10px;padding:16px;width:100%;max-width:900px}
+.box.wide{max-width:min(1250px,96vw)}
 .box h3{margin:0 0 12px}
 .cards{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .cards div{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:10px 14px}
@@ -49,7 +51,7 @@ nav{display:none;position:absolute;left:0;right:0;top:100%;z-index:7;background:
 nav.open{display:flex}
 nav button{width:100%;text-align:left;padding:12px 14px}
 main{padding:10px}
-#main .wrap{border:0;background:none;overflow:visible}
+#main .wrap{border:0;background:none;overflow:visible;max-height:none!important}
 #main table,#main tbody{display:block}
 #main tr.hd{display:none}
 #main tr{display:block;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin-bottom:10px}
@@ -162,12 +164,12 @@ let tab='docs',selC='',F;
 function go(t){tab=t;selC='';$('nav').classList.remove('open');render()}
 function toggleMenu(){$('nav').classList.toggle('open')}
 document.addEventListener('click',e=>{if(!e.target.closest('nav,#mnu'))$('nav').classList.remove('open')});
-function modal(h){$('#modal').innerHTML='<div class="box">'+h+'</div>';$('#modal').style.display='flex'}
+function modal(h,c){$('#modal').innerHTML='<div class="box'+(c?' '+c:'')+'">'+h+'</div>';$('#modal').style.display='flex'}
 function closeM(){$('#modal').style.display='none';if(dirty){dirty=false;render()}}
 function render(){
  $('#name').textContent=S.cfg.name;fsStat();
  document.querySelectorAll('nav button').forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);if(on)$('#mnu').textContent='☰ '+b.textContent});
- $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja,ot:vOt}[tab]();mobileLabels();applyQ();
+ $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja,ot:vOt}[tab]();mobileLabels();applyQ();fitWraps();
 }
 $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S.cfg.name=n;save();render()}};
 
@@ -183,7 +185,7 @@ function docForm(type,base){
 function drawForm(){
  const rows=F.items.map((it,i)=>`<tr><td><select onchange="itSel(${i},this.value)"><option value="">— Producto —</option>${S.prods.map(p=>`<option value="${p.id}" ${p.id===it.pid?'selected':''}>${esc(p.name)} (stock ${p.stock})</option>`).join('')}</select></td><td><input type="number" min="1" value="${it.qty}" style="width:64px" onchange="itSet(${i},'qty',this.value)"></td><td><input type="number" min="0" step="any" value="${it.price}" style="width:100px" onchange="itSet(${i},'price',this.value)"></td><td class="r">${money(it.qty*it.price)}</td><td><button class="x" onclick="itDel(${i})">×</button></td></tr>`).join('');
  const sub=F.items.reduce((a,i)=>a+i.qty*i.price,0),tot=calc(sub,F.disc,F.sur);
- modal(`<h3>${F.type==='P'?'Nuevo presupuesto':'Nueva venta'}</h3><div class="g ${F.type==='V'?'c3':'c2'}"><label>Cliente<select onchange="F.cid=this.value;F.items.forEach(i=>{const p=S.prods.find(p=>p.id===i.pid);if(p)i.price=price(p,F.cid)});drawForm()"><option value="">Consumidor final</option>${S.clients.map(c=>`<option value="${c.id}" ${c.id===F.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><label>Fecha<input type="date" value="${F.date}" onchange="F.date=this.value"></label>${F.type==='V'?`<label>Forma de pago<select id="d_pm" onchange="F.pm=this.value">${PMS.map(x=>`<option ${F.pm===x?'selected':''}>${x}</option>`).join('')}</select></label>`:''}<label>Descuento %<input type="number" min="0" step="any" value="${F.disc}" onchange="F.disc=+this.value||0;drawForm()"></label><label>Recargo %<input type="number" min="0" step="any" value="${F.sur}" onchange="F.sur=+this.value||0;drawForm()"></label></div><div class="wrap"><table class="items"><tr><th>Producto<th>Cant.<th>Precio<th class="r">Subtotal<th></tr>${rows}</table></div><div class="bar" style="margin-top:10px;justify-content:space-between"><button onclick="F.items.push({pid:'',qty:1,price:0});drawForm()">+ Agregar línea</button><b style="font-size:18px">Total: ${money(tot)}</b></div><label style="margin-top:10px">Notas / aclaraciones para el cliente (salen en el comprobante)<textarea rows="3" style="width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px" oninput="F.note=this.value">${esc(F.note)}</textarea></label><div class="bar" style="margin-top:10px"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveDoc()">Guardar</button></div>`);
+ modal(`<h3>${F.type==='P'?'Nuevo presupuesto':'Nueva venta'}</h3><div class="g ${F.type==='V'?'c3':'c2'}"><label>Cliente<select onchange="F.cid=this.value;F.items.forEach(i=>{const p=S.prods.find(p=>p.id===i.pid);if(p)i.price=price(p,F.cid)});drawForm()"><option value="">Consumidor final</option>${S.clients.map(c=>`<option value="${c.id}" ${c.id===F.cid?'selected':''}>${esc(c.name)}</option>`).join('')}</select></label><label>Fecha<input type="date" value="${F.date}" onchange="F.date=this.value"></label>${F.type==='V'?`<label>Forma de pago<select id="d_pm" onchange="F.pm=this.value">${PMS.map(x=>`<option ${F.pm===x?'selected':''}>${x}</option>`).join('')}</select></label>`:''}<label>Descuento %<input type="number" min="0" step="any" value="${F.disc}" onchange="F.disc=+this.value||0;drawForm()"></label><label>Recargo %<input type="number" min="0" step="any" value="${F.sur}" onchange="F.sur=+this.value||0;drawForm()"></label></div><div class="wrap"><table class="items"><tr><th>Producto<th>Cant.<th>Precio<th class="r">Subtotal<th></tr>${rows}</table></div><div class="bar" style="margin-top:10px;justify-content:space-between"><button onclick="F.items.push({pid:'',qty:1,price:0});drawForm()">+ Agregar línea</button><b style="font-size:18px">Total: ${money(tot)}</b></div><label style="margin-top:10px">Notas / aclaraciones para el cliente (salen en el comprobante)<textarea rows="3" style="width:100%;font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:6px;padding:6px" oninput="F.note=this.value">${esc(F.note)}</textarea></label><div class="bar" style="margin-top:10px"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="saveDoc()">Guardar</button></div>`,'wide');
 }
 function itSel(i,pid){const p=S.prods.find(p=>p.id===pid);F.items[i].pid=pid;if(p)F.items[i].price=price(p,F.cid);drawForm()}
 function itSet(i,k,v){F.items[i][k]=+v||0;drawForm()}
@@ -316,6 +318,10 @@ function addList(k){const n=val('n_'+k).trim();if(n)pushOpt(k,n);listForm()}
 function delOpt(k,i){const key=LST[k];if(confirm('¿Quitar "'+S.cfg[key][i]+'" de la lista? Los productos que ya lo usan lo conservan.')){S.cfg[key].splice(i,1);save();listForm()}}
 function seedOpts(){S.prods.forEach(p=>{if(p.cat)pushOpt('cat',p.cat);if(p.sup)pushOpt('sup',p.sup)});listForm()}
 
+/* ---------- Tablas: la barra de desplazamiento queda siempre a la vista ---------- */
+function fitWraps(){const d=window.matchMedia&&matchMedia('(min-width:701px)').matches;document.querySelectorAll('#main>.wrap').forEach(w=>{w.style.maxHeight=d?Math.max(160,innerHeight-(w.getBoundingClientRect().top+window.scrollY)-24)+'px':''})}
+window.addEventListener('resize',fitWraps);
+
 /* ---------- Buscador ---------- */
 const Q={};
 const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -369,7 +375,7 @@ async function saveOT(id){
 function openOT(id){
  const o=S.ots.find(x=>x.id===id);if(!o)return closeM();
  const row=(l,v)=>v?`<tr><td class="mu">${l}</td><td style="white-space:normal">${esc(v)}</td></tr>`:'',pag=otPaid(id);
- modal(`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">${otNum(o)} · ${esc(o.name)}</h3><select onchange="otEstado('${id}',this.value)">${OTE.map(x=>`<option ${x===o.estado?'selected':''}>${x}</option>`).join('')}</select></div><table style="margin:10px 0">${row('Ingreso',o.date)}${row('Teléfono',o.phone)}${row('Equipo',[o.tipo,o.marca,o.modelo].filter(Boolean).join(' '))}${row('N° de serie / IMEI',o.serie)}${row('Accesorios',o.acc)}${row('Clave / patrón',o.clave)}${row('Falla informada',o.falla)}${row('Estado físico',o.fisico)}${row('Fecha prometida',o.prom)}${row('Presupuesto estimado',o.est?money(o.est):'')}</table><div class="g c2"><label>Diagnóstico / trabajo realizado<textarea rows="3" style="${TA}" onchange="otSet('${id}','diag',this.value)">${esc(o.diag)}</textarea></label><label>Importe final ($)<input type="number" step="any" value="${o.final||''}" onchange="otSet('${id}','final',+this.value||0)"><span class="mu">Cobrado: ${money(pag)}${o.final?' · Saldo: '+money(o.final-pag):''}</span></label></div><h4 style="margin:10px 0 6px">Notas internas</h4><div style="max-height:200px;overflow:auto;margin-bottom:8px">${[...o.notes].reverse().map(n=>`<div style="border-left:3px solid var(--bd);padding:2px 8px;margin-bottom:6px"><small class="mu">${new Date(n.t).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})} · ${esc(n.by)}</small><br>${esc(n.txt).replace(/\n/g,'<br>')}</div>`).join('')||'<span class="mu">Sin notas todavía.</span>'}</div><textarea id="o_note" rows="2" placeholder="Escribí una nota (llamada al cliente, repuesto pedido, novedades...)" style="${TA}"></textarea><div class="bar" style="margin-top:6px"><button class="pr" onclick="otNote('${id}')">Agregar nota</button></div><div class="bar" style="border-top:1px solid var(--bd);padding-top:10px"><button class="x" onclick="delOT('${id}')">Eliminar</button><button onclick="otForm('${id}')">Editar datos</button><button onclick="otPay('${id}')">Registrar cobro</button><button onclick="printOT('${id}')">Imprimir orden</button><button class="pr" onclick="closeM()">Cerrar</button></div>`);
+ modal(`<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">${otNum(o)} · ${esc(o.name)}</h3><select onchange="otEstado('${id}',this.value)">${OTE.map(x=>`<option ${x===o.estado?'selected':''}>${x}</option>`).join('')}</select></div><table style="margin:10px 0">${row('Ingreso',o.date)}${row('Teléfono',o.phone)}${row('Equipo',[o.tipo,o.marca,o.modelo].filter(Boolean).join(' '))}${row('N° de serie / IMEI',o.serie)}${row('Accesorios',o.acc)}${row('Clave / patrón',o.clave)}${row('Falla informada',o.falla)}${row('Estado físico',o.fisico)}${row('Fecha prometida',o.prom)}${row('Presupuesto estimado',o.est?money(o.est):'')}</table><div class="g c2"><label>Diagnóstico / trabajo realizado<textarea rows="3" style="${TA}" onchange="otSet('${id}','diag',this.value)">${esc(o.diag)}</textarea></label><label>Importe final ($)<input type="number" step="any" value="${o.final||''}" onchange="otSet('${id}','final',+this.value||0)"><span class="mu">Cobrado: ${money(pag)}${o.final?' · Saldo: '+money(o.final-pag):''}</span></label></div><h4 style="margin:10px 0 6px">Notas internas</h4><div style="max-height:200px;overflow:auto;margin-bottom:8px">${[...o.notes].reverse().map(n=>`<div style="border-left:3px solid var(--bd);padding:2px 8px;margin-bottom:6px"><small class="mu">${new Date(n.t).toLocaleString('es-AR',{dateStyle:'short',timeStyle:'short'})} · ${esc(n.by)}</small><br>${esc(n.txt).replace(/\n/g,'<br>')}</div>`).join('')||'<span class="mu">Sin notas todavía.</span>'}</div><textarea id="o_note" rows="2" placeholder="Escribí una nota (llamada al cliente, repuesto pedido, novedades...)" style="${TA}"></textarea><div class="bar" style="margin-top:6px"><button class="pr" onclick="otNote('${id}')">Agregar nota</button></div><div class="bar" style="border-top:1px solid var(--bd);padding-top:10px"><button class="x" onclick="delOT('${id}')">Eliminar</button><button onclick="otForm('${id}')">Editar datos</button><button onclick="otPay('${id}')">Registrar cobro</button><button onclick="printOT('${id}')">Imprimir orden</button><button class="pr" onclick="closeM()">Cerrar</button></div>`,'wide');
 }
 function otSet(id,k,v){S.ots.find(x=>x.id===id)[k]=v;save();if(k==='final')openOT(id)}
 function otEstado(id,v){const o=S.ots.find(x=>x.id===id);o.estado=v;otLog(o,'Estado cambiado a: '+v);save();openOT(id);render()}
@@ -427,7 +433,7 @@ function impMap(){
  const opt=i=>`<option value="-1" ${map[i]<0?'selected':''}>— no importar —</option>`+heads.map((h,j)=>`<option value="${j}" ${map[i]===j?'selected':''}>${esc(h||'(columna '+(j+1)+')')}</option>`).join('');
  const sel=(k,a)=>`<select onchange="IM.${k}=this.value">${a.map(([v,t])=>`<option value="${v}" ${IM[k]===v?'selected':''}>${t}</option>`).join('')}</select>`;
  const prev=`<tr>${pf.map(i=>`<th>${F[i][1]}`).join('')}</tr>`+data.slice(0,4).map(r=>`<tr>${pf.map(i=>`<td>${esc(r[map[i]])}`).join('')}</tr>`).join('');
- modal(`<h3>Importar ${IMP[kind].title}</h3><p class="mu">Se encontraron <b>${data.length}</b> filas. Indicá qué columna de tu planilla corresponde a cada dato (ya intenté detectarlas).</p><div class="g c3">${F.map((f,i)=>`<label>${f[1]}<select onchange="IM.map[${i}]=+this.value;impMap()">${opt(i)}</select></label>`).join('')}</div><div class="g c2"><label>Si ya existe (mismo ${kind==='prods'?'código o nombre':'DNI/CUIT o nombre'})${sel('mode',[['upd','Actualizar sus datos'],['add','Omitirlo (solo agregar nuevos)']])}</label>${kind==='prods'?`<label>Stock de los que ya existen${sel('stk',[['set','Reemplazar por el de la planilla'],['sum','Sumar al stock actual']])}</label>`:''}</div><p class="mu" style="margin:6px 0">Vista previa:</p><div class="wrap" style="margin-bottom:10px"><table>${prev}</table></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="impRun()">Importar ${data.length} filas</button></div>`);
+ modal(`<h3>Importar ${IMP[kind].title}</h3><p class="mu">Se encontraron <b>${data.length}</b> filas. Indicá qué columna de tu planilla corresponde a cada dato (ya intenté detectarlas).</p><div class="g c3">${F.map((f,i)=>`<label>${f[1]}<select onchange="IM.map[${i}]=+this.value;impMap()">${opt(i)}</select></label>`).join('')}</div><div class="g c2"><label>Si ya existe (mismo ${kind==='prods'?'código o nombre':'DNI/CUIT o nombre'})${sel('mode',[['upd','Actualizar sus datos'],['add','Omitirlo (solo agregar nuevos)']])}</label>${kind==='prods'?`<label>Stock de los que ya existen${sel('stk',[['set','Reemplazar por el de la planilla'],['sum','Sumar al stock actual']])}</label>`:''}</div><p class="mu" style="margin:6px 0">Vista previa:</p><div class="wrap" style="margin-bottom:10px"><table>${prev}</table></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="impRun()">Importar ${data.length} filas</button></div>`,'wide');
 }
 function impRun(){
  const{kind,data,map,mode,stk}=IM,F=IMP[kind].fields,fi=k=>F.findIndex(f=>f[0]===k);
