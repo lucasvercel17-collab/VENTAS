@@ -8,6 +8,7 @@
 :root[data-theme="dark"]{--bg:#12161c;--card:#1b2129;--tx:#e8ecf1;--mu:#9aa5b1;--bd:#2c343e;--pr:#5b9bff;--ok:#4cc38a;--bad:#ff7b6b}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.4 system-ui,Arial,sans-serif}
+#mnu{display:none}
 header{background:var(--card);border-bottom:1px solid var(--bd);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 #name{font-weight:700;font-size:17px;cursor:pointer;margin-right:auto}
 nav{display:flex;gap:4px;flex-wrap:wrap}
@@ -33,10 +34,12 @@ label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--mu)}
 .cards b{display:block;font-size:18px}
 @media screen and (max-width:700px){
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:8px 10px}
-#name{font-size:15px}header>button,#fs{font-size:12px}
-nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--bd);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));flex-wrap:nowrap;overflow-x:auto;gap:6px}
-nav button{flex:0 0 auto;padding:10px 12px}
-main{padding:10px 10px 96px}
+#name{font-size:15px}header>button{font-size:12px;padding:6px 10px}#fs{display:none}
+header>#mnu{display:inline-block;font-weight:600;font-size:14px}
+nav{display:none;position:absolute;left:0;right:0;top:100%;z-index:7;background:var(--card);border-bottom:1px solid var(--bd);box-shadow:0 8px 16px rgba(0,0,0,.18);flex-direction:column;flex-wrap:nowrap;gap:4px;padding:8px 10px;max-height:calc(100vh - 80px);overflow-y:auto}
+nav.open{display:flex}
+nav button{width:100%;text-align:left;padding:12px 14px}
+main{padding:10px}
 #main .wrap{border:0;background:none;overflow:visible}
 #main table,#main tbody{display:block}
 #main tr.hd{display:none}
@@ -51,7 +54,7 @@ input,select,textarea{font-size:16px}button{min-height:38px}
 }
 @media print{body>*:not(#modal){display:none!important}.noprint{display:none!important}#modal{position:static;background:none;display:block!important;padding:0}.box{max-width:none;padding:0}}
 </style></head><body>
-<header><span id="name" title="Tocá para cambiar el nombre"></span>
+<header><span id="name" title="Tocá para cambiar el nombre"></span><button id="mnu" onclick="toggleMenu()">☰ Menú</button>
 <nav><button data-t="docs" onclick="go('docs')">Comprobantes</button><button data-t="prods" onclick="go('prods')">Stock y precios</button><button data-t="cli" onclick="go('cli')">Clientes</button><button data-t="acc" onclick="go('acc')">Cuentas corrientes</button><button data-t="ot" onclick="go('ot')">Servicio técnico</button><button data-t="caja" onclick="go('caja')">Caja diaria</button><button data-t="rep" onclick="go('rep')">Reportes</button></nav>
 <span id="fs" class="mu" style="font-size:12px"></span><button onclick="cfgForm()">Mi negocio</button><button id="inst" style="display:none" onclick="installApp()">Instalar app</button><button onclick="backup()">Respaldo</button><button onclick="logout()">Salir</button></header>
 <div id="login" class="modal" style="display:flex"><div class="box" style="max-width:360px;margin-top:10vh"><h3>Ingresar al sistema</h3><div class="g" style="grid-template-columns:1fr"><label>Correo<input id="l_mail" type="email" autocomplete="username"></label><label>Contraseña<input id="l_pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></label></div><div class="bar"><button class="pr" onclick="login()">Ingresar</button></div><p id="l_err" class="bad"></p></div></div>
@@ -64,6 +67,7 @@ window.addEventListener('unhandledrejection',function(e){showErr('Error: '+((e.r
 </script>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const SB_URL=(window.APP_CONFIG||{}).url||'',SB_KEY=(window.APP_CONFIG||{}).key||'';
 const sb=(SB_URL.startsWith('https://')&&window.supabase)?window.supabase.createClient(SB_URL,SB_KEY):null;
@@ -127,12 +131,14 @@ const bal=id=>S.docs.filter(d=>d.type==='V'&&d.cid===id).reduce((a,d)=>a+d.total
 const num=d=>(d.type==='P'?'P-':'V-')+String(d.num).padStart(4,'0');
 const val=id=>$('#'+id).value;
 let tab='docs',selC='',F;
-function go(t){tab=t;selC='';render()}
+function go(t){tab=t;selC='';$('nav').classList.remove('open');render()}
+function toggleMenu(){$('nav').classList.toggle('open')}
+document.addEventListener('click',e=>{if(!e.target.closest('nav,#mnu'))$('nav').classList.remove('open')});
 function modal(h){$('#modal').innerHTML='<div class="box">'+h+'</div>';$('#modal').style.display='flex'}
 function closeM(){$('#modal').style.display='none';if(dirty){dirty=false;render()}}
 function render(){
  $('#name').textContent=S.cfg.name;fsStat();
- document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+ document.querySelectorAll('nav button').forEach(b=>{const on=b.dataset.t===tab;b.classList.toggle('on',on);if(on)$('#mnu').textContent='☰ '+b.textContent});
  $('#main').innerHTML={docs:vDocs,prods:vProds,cli:vCli,acc:vAcc,rep:vRep,caja:vCaja,ot:vOt}[tab]();mobileLabels();applyQ();
 }
 $('#name').onclick=()=>{const n=prompt('Nombre del negocio:',S.cfg.name);if(n){S.cfg.name=n;save();render()}};
@@ -188,7 +194,7 @@ function printDoc(id){
 function vProds(){
  const rows=S.prods.map(p=>`<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${esc(p.cat||'')}</td><td>${esc(p.sup||'')}</td><td class="r ${p.stock<=p.min?'bad':''}">${p.stock}${p.stock<=p.min?' ⚠':''}</td><td class="r">${money(p.cost)}</td><td class="r">${money(p.price)}</td><td class="r">${p.pm?money(p.pm):'-'}</td><td class="a"><button onclick="prodForm('${p.id}')">Editar</button><button class="x" onclick="delProd('${p.id}')">Borrar</button></td></tr>`).join('');
  const val=S.prods.reduce((a,p)=>a+p.stock*p.cost,0);
- return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div>${sbox('Buscar por nombre, código, categoría o proveedor...')}<div class="bar"><button onclick="listForm()">Categorías y proveedores</button><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
+ return `<div class="cards"><div>Productos<b>${S.prods.length}</b></div><div>Valor del stock (a costo)<b>${money(val)}</b></div></div>${sbox('Buscar por nombre, código, categoría o proveedor...')}<div class="bar"><button onclick="impOpen('prods')">Importar Excel</button><button onclick="listForm()">Categorías y proveedores</button><button onclick="recalcMg()">Recalcular por margen</button><button onclick="adjPrices()">Ajustar precios %</button><button class="pr" onclick="prodForm()">+ Producto</button></div><div class="wrap"><table><tr><th>Código<th>Producto<th>Categoría<th>Proveedor<th class="r">Stock<th class="r">Costo<th class="r">Precio<th class="r">Mayorista<th></tr>${rows||'<tr><td colspan="9" class="mu">Cargá tu primer producto.</td></tr>'}</table></div>`;
 }
 function prodForm(id){
  const p=S.prods.find(x=>x.id===id)||{code:'',name:'',stock:0,min:0,cost:0,price:0};
@@ -211,7 +217,7 @@ function adjPrices(){
 /* ---------- Clientes ---------- */
 function vCli(){
  const rows=S.clients.map(c=>{const b=bal(c.id);return `<tr><td>${esc(c.name)}</td><td>${esc(c.doc||'')}</td><td>${esc(c.phone)}</td><td>${esc(c.addr||'')}</td><td>${c.type||'Minorista'}</td><td>${esc(c.notes)}</td><td class="r ${b>0?'bad':''}">${money(b)}</td><td class="a"><button onclick="cliForm('${c.id}')">Editar</button><button class="x" onclick="delCli('${c.id}')">Borrar</button></td></tr>`}).join('');
- return `${sbox('Buscar por nombre, DNI/CUIT, teléfono o dirección...')}<div class="bar"><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>DNI / CUIT<th>Teléfono<th>Dirección<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="8" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
+ return `${sbox('Buscar por nombre, DNI/CUIT, teléfono o dirección...')}<div class="bar"><button onclick="impOpen('cli')">Importar Excel</button><button class="pr" onclick="cliForm()">+ Cliente</button></div><div class="wrap"><table><tr><th>Nombre<th>DNI / CUIT<th>Teléfono<th>Dirección<th>Tipo<th>Notas<th class="r">Saldo<th></tr>${rows||'<tr><td colspan="8" class="mu">Todavía no hay clientes.</td></tr>'}</table></div>`;
 }
 function cliForm(id){
  const c=S.clients.find(x=>x.id===id)||{name:'',phone:'',notes:'',addr:'',doc:''};
@@ -353,6 +359,76 @@ function printOT(id){
  const o=S.ots.find(x=>x.id===id),c=S.clients.find(x=>x.id===o.cid),sena=otPaid(id),r=(l,v)=>v?`<tr><td class="mu">${l}</td><td style="white-space:normal">${esc(v)}</td></tr>`:'';
  modal(`${bizHead()}<p><b>ORDEN DE TRABAJO ${otNum(o)}</b> · Ingreso: ${o.date}${o.prom?' · Entrega estimada: '+o.prom:''}</p><table>${r('Cliente',o.name+(c&&c.doc?' · DNI/CUIT: '+c.doc:''))}${r('Teléfono',o.phone)}${r('Equipo',[o.tipo,o.marca,o.modelo].filter(Boolean).join(' '))}${r('N° de serie / IMEI',o.serie)}${r('Accesorios',o.acc)}${r('Falla informada',o.falla)}${r('Estado físico al recibir',o.fisico)}${r('Presupuesto estimado',o.est?money(o.est):'')}${r('Seña / pagos',sena?money(sena):'')}</table><p><small>${esc(S.cfg.otTxt??OTTXT)}</small></p><div style="display:flex;justify-content:space-between;margin-top:40px;gap:20px"><div style="flex:1;border-top:1px solid var(--tx);text-align:center;padding-top:4px"><small>Firma del cliente</small></div><div style="flex:1;border-top:1px solid var(--tx);text-align:center;padding-top:4px"><small>Recibido por</small></div></div><div class="bar noprint" style="margin-top:14px"><button onclick="openOT('${id}')">Volver</button><button class="pr" onclick="window.print()">Imprimir / PDF</button></div>`);
 }
+
+/* ---------- Importar desde Excel / CSV ---------- */
+const IMP={
+ prods:{title:'productos',fields:[['code','Código',['codigo','cod','sku','codigo de barras','barras','ean']],['name','Nombre *',['nombre','producto','articulo','descripcion','detalle']],['cat','Categoría',['categoria','rubro','familia']],['sup','Proveedor',['proveedor']],['stock','Stock',['stock','cantidad','existencia','unidades']],['min','Stock mínimo',['stock minimo','minimo','stock min']],['cost','Costo',['costo','precio de costo','costo unitario','precio compra']],['price','Precio de venta',['precio','precio de venta','pvp','precio venta','precio publico','venta']],['pm','Precio mayorista',['mayorista','precio mayorista']],['mg','Margen %',['margen','margen %','markup','ganancia']]]},
+ cli:{title:'clientes',fields:[['name','Nombre *',['nombre','cliente','razon social','nombre y apellido','apellido y nombre']],['doc','DNI / CUIT',['dni','cuit','cuil','documento','dni/cuit','cuit/dni']],['phone','Teléfono',['telefono','tel','celular','whatsapp','movil']],['addr','Dirección',['direccion','domicilio']],['notes','Notas',['notas','observaciones','comentarios']],['type','Tipo de precio',['tipo','tipo de precio','tipo de cliente','lista']]]}};
+let IM=null;
+function parseNum(v){
+ if(typeof v==='number')return isFinite(v)?v:null;
+ let s=String(v||'').replace(/[^\d,.\-]/g,'');if(!s||s==='-')return null;
+ if(s.includes(',')&&s.includes('.'))s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');
+ else if(s.includes(','))s=s.replace(',','.');
+ else if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');
+ const n=parseFloat(s);return isFinite(n)?n:null}
+function guessMap(kind,heads){
+ const F=IMP[kind].fields,H=heads.map(norm),map=F.map(()=>-1),used=new Set();
+ F.forEach((f,i)=>{const j=H.findIndex((h,j)=>!used.has(j)&&f[2].includes(h));if(j>=0){map[i]=j;used.add(j)}});
+ F.forEach((f,i)=>{if(map[i]>=0)return;const j=H.findIndex((h,j)=>!used.has(j)&&h&&f[2].some(s=>s.length>=4&&h.includes(s)));if(j>=0){map[i]=j;used.add(j)}});
+ return map}
+function impOpen(kind){
+ modal(`<h3>Importar ${IMP[kind].title} desde Excel</h3><p class="mu">Elegí una planilla (.xlsx, .xls o .csv). La primera fila debe tener los títulos de las columnas. Después podés indicar qué columna es cada dato.</p><div class="bar" style="justify-content:flex-start"><button onclick="impModel('${kind}')">Descargar planilla modelo</button></div><input type="file" accept=".xlsx,.xls,.csv" onchange="impFile('${kind}',this)"><div class="bar" style="margin-top:12px"><button onclick="closeM()">Cancelar</button></div>`);
+}
+function impModel(kind){
+ if(!window.XLSX)return alert('No se pudo cargar el lector de Excel (¿sin conexión a internet?).');
+ const F=IMP[kind].fields,ex=kind==='prods'?['A001','Mouse inalámbrico','Periféricos','Proveedor 1',10,2,1000,1600,1400,'']:['Juan Pérez','20-12345678-9','351 5551234','San Martín 123','','Minorista'];
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([F.map(f=>f[1].replace(' *','')),ex]),'Datos');XLSX.writeFile(wb,'modelo_'+(kind==='prods'?'productos':'clientes')+'.xlsx')}
+function impFile(kind,inp){
+ const f=inp.files[0];if(!f)return;
+ if(!window.XLSX)return alert('No se pudo cargar el lector de Excel (¿sin conexión a internet?).');
+ f.arrayBuffer().then(b=>{
+  const wb=XLSX.read(b,{type:'array'}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:'',raw:true}),hi=rows.findIndex(r=>r.some(c=>String(c).trim()!==''));
+  if(hi<0)return alert('La planilla está vacía.');
+  const heads=rows[hi].map(c=>String(c).trim()),data=rows.slice(hi+1).filter(r=>r.some(c=>String(c).trim()!==''));
+  if(!data.length)return alert('La planilla no tiene filas de datos debajo de los títulos.');
+  IM={kind,heads,data,map:guessMap(kind,heads),mode:'upd',stk:'set'};impMap()}).catch(()=>alert('No se pudo leer el archivo.'))}
+function impMap(){
+ const{kind,heads,data,map}=IM,F=IMP[kind].fields,pf=F.map((f,i)=>i).filter(i=>map[i]>=0);
+ const opt=i=>`<option value="-1" ${map[i]<0?'selected':''}>— no importar —</option>`+heads.map((h,j)=>`<option value="${j}" ${map[i]===j?'selected':''}>${esc(h||'(columna '+(j+1)+')')}</option>`).join('');
+ const sel=(k,a)=>`<select onchange="IM.${k}=this.value">${a.map(([v,t])=>`<option value="${v}" ${IM[k]===v?'selected':''}>${t}</option>`).join('')}</select>`;
+ const prev=`<tr>${pf.map(i=>`<th>${F[i][1]}`).join('')}</tr>`+data.slice(0,4).map(r=>`<tr>${pf.map(i=>`<td>${esc(r[map[i]])}`).join('')}</tr>`).join('');
+ modal(`<h3>Importar ${IMP[kind].title}</h3><p class="mu">Se encontraron <b>${data.length}</b> filas. Indicá qué columna de tu planilla corresponde a cada dato (ya intenté detectarlas).</p><div class="g">${F.map((f,i)=>`<label>${f[1]}<select onchange="IM.map[${i}]=+this.value;impMap()">${opt(i)}</select></label>`).join('')}</div><div class="g"><label>Si ya existe (mismo ${kind==='prods'?'código o nombre':'DNI/CUIT o nombre'})${sel('mode',[['upd','Actualizar sus datos'],['add','Omitirlo (solo agregar nuevos)']])}</label>${kind==='prods'?`<label>Stock de los que ya existen${sel('stk',[['set','Reemplazar por el de la planilla'],['sum','Sumar al stock actual']])}</label>`:''}</div><p class="mu" style="margin:6px 0">Vista previa:</p><div class="wrap" style="margin-bottom:10px"><table>${prev}</table></div><div class="bar"><button onclick="closeM()">Cancelar</button><button class="pr" onclick="impRun()">Importar ${data.length} filas</button></div>`);
+}
+function impRun(){
+ const{kind,data,map,mode,stk}=IM,F=IMP[kind].fields,fi=k=>F.findIndex(f=>f[0]===k);
+ if(map[fi('name')]<0)return alert('Tenés que indicar la columna del nombre.');
+ const g=(r,k)=>{const j=map[fi(k)];return j<0?'':r[j]},t=(r,k)=>{const x=g(r,k);return typeof x==='number'?String(x):String(x).trim()},nn=(r,k)=>parseNum(g(r,k));
+ let add=0,upd=0,skip=0;
+ data.forEach(r=>{
+  const name=t(r,'name');if(!name){skip++;return}
+  if(kind==='prods'){
+   const code=t(r,'code'),ex=S.prods.find(p=>code?p.code===code:p.name.toLowerCase()===name.toLowerCase());
+   if(ex&&mode==='add'){skip++;return}
+   const v={name};if(code)v.code=code;
+   ['cat','sup'].forEach(k=>{const x=t(r,k);if(x)v[k]=pushOpt(k,x)});
+   ['min','cost','price','pm'].forEach(k=>{const x=nn(r,k);if(x!==null)v[k]=x});
+   const st=nn(r,'stock'),mg=nn(r,'mg');
+   if(st!==null)v.stock=ex&&stk==='sum'?ex.stock+st:st;
+   const o=ex||{id:uid(),code:'',name,stock:0,min:0,cost:0,price:0,pm:0,mg:0,mgm:0,cat:'',sup:''};
+   Object.assign(o,v);
+   if(mg!==null){o.mg=mg;if(v.price===undefined&&o.cost>0)o.price=rnd(o.cost*(1+mg/100))}
+   else if(o.cost>0&&o.price)o.mg=rnd((o.price/o.cost-1)*100);
+   if(ex)upd++;else{S.prods.push(o);add++}
+  }else{
+   const doc=t(r,'doc'),ex=S.clients.find(c=>doc?c.doc===doc:c.name.toLowerCase()===name.toLowerCase());
+   if(ex&&mode==='add'){skip++;return}
+   const v={name};['doc','phone','addr','notes'].forEach(k=>{const x=t(r,k);if(x)v[k]=x});
+   const ty=t(r,'type');if(ty)v.type=/mayor/i.test(ty)?'Mayorista':'Minorista';
+   if(ex){Object.assign(ex,v);upd++}else{S.clients.push({id:uid(),phone:'',notes:'',type:'Minorista',addr:'',doc:'',...v});add++}
+  }});
+ save();closeM();render();
+ alert('Importación lista: '+add+' nuevos, '+upd+' actualizados'+(skip?', '+skip+' omitidos (sin nombre o ya existentes)':'')+'.')}
 
 /* ---------- Reportes ---------- */
 function vRep(){
