@@ -8,7 +8,16 @@ Deno.serve(async (req) => {
   if (req.headers.get('x-cron-secret') !== Deno.env.get('CRON_SECRET')) {
     return new Response('forbidden', { status: 403 })
   }
-  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  // Clave interna del proyecto: se toma de CLAVE_SERVICIO (si la cargaste), de la clave que
+  // Supabase da por defecto a las funciones, o de su lista de claves secretas.
+  let claveInterna = Deno.env.get('CLAVE_SERVICIO') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  if (!claveInterna) {
+    try { claveInterna = Object.values(JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') ?? '{}'))[0] as string } catch (_) { /* sin clave */ }
+  }
+  if (!claveInterna) {
+    return new Response(JSON.stringify({ error: 'Falta la clave interna: cargá el secreto CLAVE_SERVICIO' }), { status: 500 })
+  }
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, claveInterna)
   webpush.setVapidDetails(
     Deno.env.get('VAPID_SUBJECT')!,
     Deno.env.get('VAPID_PUBLIC_KEY')!,

@@ -37,7 +37,9 @@ Completá también `url` y `key` (los mismos datos de siempre).
 | `VAPID_PRIVATE_KEY` | la clave privada del paso 1 |
 | `VAPID_SUBJECT` | `mailto:` seguido de tu correo, por ejemplo `mailto:tucorreo@gmail.com` |
 
-Supabase ya le da a la función, por su cuenta, la dirección del proyecto y su clave interna. No hay que cargarlas.
+Dónde se cargan: en el menú de la izquierda de Supabase entrá a **Edge Functions** y abrí la pestaña **Secrets**. Para cada secreto escribí el nombre en **Key**, el valor en **Value** (sin comillas ni espacios de más) y tocá **Save**. Los nombres tienen que quedar exactamente como en la tabla.
+
+Supabase le da a la función, por su cuenta, la dirección del proyecto y su clave interna, así que normalmente no hay que cargarlas. Solo si en los **Logs** de la función aparece "Falta la clave interna", agregá un quinto secreto llamado `CLAVE_SERVICIO` con la clave **secret** (o `service_role`) de tu proyecto, que está en **Project Settings → API Keys**.
 
 ## 4. Programar la tarea que revisa el calendario cada minuto
 
