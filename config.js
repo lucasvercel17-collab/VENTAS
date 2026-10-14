@@ -4,5 +4,5 @@ window.APP_CONFIG = {
   url: 'https://fzbhhpswpiaegipfzzeh.supabase.co',
   key: 'sb_publishable_BDzUSmgkMHveBQhQXsiQiA_PhFAbMxg',
   // Clave pública de avisos (VAPID): solo hace falta para las notificaciones del calendario.
-  vapid: 'PEGAR_AQUI_LA_CLAVE_PUBLICA_DE_AVISOS'
+  vapid: 'BLuYoVy3e4v-ujOFB4Uc3juAGO6-hKn_aijjrxTxY7wlWXFxJhoTom9N9I1RelTnGcBmW_bADnYZBbnFvdbcBQ0'
 };
