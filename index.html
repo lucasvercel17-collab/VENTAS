@@ -746,11 +746,16 @@ async function login(){
  if(r.error)return $('#l_err').textContent='No se pudo ingresar: '+r.error.message;
  start(r.data.session)}
 async function logout(){await sb.auth.signOut();location.reload()}
+let STARTED=false,RT=null;
 async function start(s){
+ if(STARTED)return;STARTED=true;
  USER=s.user.email;$('#login').style.display='none';setStat('Cargando datos…');
  try{const hasCfg=await Promise.race([loadAll(),new Promise((_,rej)=>setTimeout(()=>rej(new Error('tiempo de espera agotado: revisá tu conexión o si el proyecto de Supabase está pausado')),20000))]);let ch=!hasCfg;S.clients.forEach(c=>{if(!c.code){c.code=newCode();ch=true}});if(ch)save();
-  sb.channel('reg').on('postgres_changes',{event:'*',schema:'public',table:'registros'},onRT).subscribe(status=>{if(status==='SUBSCRIBED')setStat()});
-  if(new URLSearchParams(location.search).get('tab')==='cal')tab='cal';render();if(!DUEON){DUEON=true;setInterval(checkDue,30000)}checkDue()}catch(e){setStat('⚠ No se pudo cargar');showErr('No se pudo cargar los datos: '+(e.message||e))}}
+  if(new URLSearchParams(location.search).get('tab')==='cal')tab='cal';
+  render();if(!DUEON){DUEON=true;setInterval(checkDue,30000)}checkDue();setStat();
+  /* actualización en vivo: si falla, la app sigue funcionando igual */
+  try{if(RT)sb.removeChannel(RT);RT=sb.channel('reg-'+uid()).on('postgres_changes',{event:'*',schema:'public',table:'registros'},onRT).subscribe(status=>{if(status==='SUBSCRIBED')setStat();else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setStat('⚠ Sin actualización en vivo (recargá la página)')})}catch(e){setStat('⚠ Sin actualización en vivo (recargá la página)')}
+ }catch(e){STARTED=false;setStat('⚠ No se pudo cargar');showErr('No se pudo cargar los datos: '+(e.message||e))}}
 async function boot(){
  if(!sb){$('#l_err').textContent='Falta configurar la URL y la clave de Supabase en el archivo config.js (o no hay conexión a internet).';return}
  const{data}=await sb.auth.getSession();
