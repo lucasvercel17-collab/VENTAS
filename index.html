@@ -35,6 +35,8 @@ textarea{box-sizing:border-box}
 .dd{position:relative;display:inline-block}
 .ddm{display:none;position:absolute;right:0;top:calc(100% + 4px);min-width:300px;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.2);padding:6px;z-index:8}
 .ddm.open{display:block}
+.cfgdd{position:relative;display:inline-block}
+#cfgm{min-width:260px}
 .ddm button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:8px;font-weight:600}
 .ddm button:hover{background:var(--bg)}
 .ddm small{display:block;color:var(--mu);font-weight:400;font-size:12px;margin-top:2px;white-space:normal}
@@ -64,7 +66,7 @@ nav button[data-t=home]{display:none}
 .cards b{display:block;font-size:18px}
 @media screen and (max-width:700px){
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;padding:8px 10px}
-#name{font-size:15px}header>button{font-size:12px;padding:6px 10px}#fs{display:none}
+#name{font-size:15px}header>button,header .cfgdd>button{font-size:12px;padding:6px 10px}#fs{display:none}
 header>#mnu{display:inline-block;font-weight:600;font-size:15px;color:var(--mu)}
 nav,nav.open{display:none!important}
 nav{display:none;position:absolute;left:0;right:0;top:100%;z-index:7;background:var(--card);border-bottom:1px solid var(--bd);box-shadow:0 8px 16px rgba(0,0,0,.18);flex-direction:column;flex-wrap:nowrap;gap:4px;padding:8px 10px;max-height:calc(100vh - 80px);overflow-y:auto}
@@ -93,6 +95,7 @@ textarea{width:100%}
 .cal .dc{min-height:46px;padding:3px 4px;font-size:12px}
 .calnav{flex:1 1 100%;justify-content:center}
 .dd{flex:1 1 100%}.dd>button{width:100%}.ddm{left:0;right:0;min-width:0}
+#cfgm{left:auto;right:0;min-width:250px}
 nav button[data-t=home]{display:block}.calbtn{flex:1 1 100%}
 .g input,.g select,.g textarea{width:100%}
 .cards{gap:8px}.cards div{flex:1 1 calc(50% - 8px);min-width:0;padding:8px 12px}.cards b{font-size:16px}
@@ -112,7 +115,7 @@ nav button[data-t=home]{display:block}.calbtn{flex:1 1 100%}
 </style></head><body>
 <header><span id="name" title="Tocá para cambiar el nombre"></span><span id="mnu"></span>
 <nav><button data-t="home" onclick="go('home')">🏠 Inicio</button><button data-t="docs" onclick="go('docs')">Facturación</button><button data-t="prods" onclick="go('prods')">Stock y precios</button><button data-t="compras" onclick="go('compras')">Compras</button><button data-t="cli" onclick="go('cli')">Clientes</button><button data-t="acc" onclick="go('acc')">Cuentas corrientes</button><button data-t="ot" onclick="go('ot')">Servicio técnico</button><button data-t="cal" onclick="go('cal')">Calendario</button><button data-t="caja" onclick="go('caja')">Caja diaria</button><button data-t="rep" onclick="go('rep')">Reportes</button></nav>
-<span id="fs" class="mu" style="font-size:12px"></span><button class="adm" onclick="cfgForm()">Mi negocio</button><button id="inst" style="display:none" onclick="installApp()">Instalar app</button><button class="adm" onclick="backup()">Respaldo</button><button class="adm" onclick="histForm()">Historial</button><button class="adm" onclick="usersForm()">Usuarios</button><button onclick="logout()">Salir</button></header>
+<span id="fs" class="mu" style="font-size:12px"></span><span class="cfgdd adm"><button onclick="cfgddToggle(event)">⚙️ Ajustes ▾</button><div class="ddm" id="cfgm"><button onclick="cfgddPick('cfgForm')">🏢 Mi negocio<small>Datos, textos, IVA y datos fiscales</small></button><button onclick="cfgddPick('backup')">💾 Respaldo<small>Exportar, compartir o importar una copia</small></button><button onclick="cfgddPick('histForm')">🕘 Historial<small>Actividad y papelera</small></button><button onclick="cfgddPick('usersForm')">👥 Usuarios<small>Roles y permisos</small></button></div></span><button id="inst" style="display:none" onclick="installApp()">Instalar app</button><button onclick="logout()">Salir</button></header>
 <div id="toast" style="display:none;position:fixed;left:10px;right:10px;bottom:14px;z-index:20;background:var(--pr);color:#fff;border-radius:10px;padding:12px 14px;font-weight:600;cursor:pointer" onclick="go('cal');this.style.display='none'"></div>
 <div id="login" class="modal" style="display:flex"><div class="box" style="max-width:360px;margin-top:10vh"><h3>Ingresar al sistema</h3><div class="g" style="grid-template-columns:1fr"><label>Correo<input id="l_mail" type="email" autocomplete="username"></label><label>Contraseña<input id="l_pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()"></label></div><div class="bar"><button class="pr" onclick="login()">Ingresar</button></div><p id="l_err" class="bad"></p></div></div>
 <main id="main"></main><div id="modal" class="modal"></div>
@@ -708,6 +711,9 @@ function cpDel(id){if(!needAdmin())return;
  c.items.forEach(i=>{const p=S.prods.find(x=>x.id===i.pid);if(p)p.stock-=i.qty});
  S.cash=S.cash.filter(m=>m.docId!==id);S.compras=S.compras.filter(x=>x.id!==id);save();closeM();render()}
 
+function cfgddToggle(e){e.stopPropagation();const m=document.querySelector('#cfgm');if(m)m.classList.toggle('open')}
+function cfgddPick(fn){const m=document.querySelector('#cfgm');if(m)m.classList.remove('open');window[fn]()}
+document.addEventListener('click',e=>{if(!e.target.closest('.cfgdd')){const m=document.querySelector('#cfgm');if(m)m.classList.remove('open')}});
 function ddToggle(e){e.stopPropagation();const m=document.querySelector('#ddm');if(m)m.classList.toggle('open')}
 function ddPick(t){const m=document.querySelector('#ddm');if(m)m.classList.remove('open');docForm(t)}
 document.addEventListener('click',e=>{if(!e.target.closest('.dd')){const m=document.querySelector('#ddm');if(m)m.classList.remove('open')}});
